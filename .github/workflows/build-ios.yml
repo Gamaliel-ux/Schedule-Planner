@@ -1,0 +1,44 @@
+name: Build Schedule Planner iOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Check Flutter
+        run: flutter --version
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+
+      - name: Build iOS IPA
+        run: flutter build ipa --release --no-codesign
+
+      - name: Check IPA
+        run: |
+          echo "Generated IPA:"
+          ls -lah build/ios/ipa/
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: schedule-planner-ios
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error
