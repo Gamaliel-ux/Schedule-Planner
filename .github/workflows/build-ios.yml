@@ -1,44 +1,41 @@
-name: Build Schedule Planner iOS
+name: Build iOS App
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ "main" ]
 
 jobs:
-  build-ios:
-    name: Build iOS IPA
+  build:
     runs-on: macos-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.x'
+          channel: 'stable'
 
-      - name: Check Flutter
-        run: flutter --version
-
-      - name: Get dependencies
+      - name: Install Dependencies
         run: flutter pub get
 
-      - name: Install CocoaPods dependencies
+      - name: Build iOS (Runner)
         run: |
           cd ios
           pod install
+          cd ..
+          flutter build ios --release --no-codesign
 
-      - name: Build iOS IPA
-        run: flutter build ipa --release --no-codesign
-
-      - name: Check IPA
-        run: |
-          echo "Generated IPA:"
-          ls -lah build/ios/ipa/
-
-      - name: Upload IPA
+      - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: schedule-planner-ios
-          path: build/ios/ipa/*.ipa
-          if-no-files-found: error
+          name: ios-release-app
+          path: build/ios/iphoneos/Runner.app
